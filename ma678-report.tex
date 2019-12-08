@@ -1,0 +1,646 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={ma678 mid-term project},
+            pdfauthor={Luyin Fu},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{ma678 mid-term project}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Luyin Fu}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+      \predate{\centering\large\emph}
+  \postdate{\par}
+    \date{12/5/2019}
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+
+\begin{document}
+\maketitle
+
+\begin{verbatim}
+## Joining, by = "word"
+\end{verbatim}
+
+\includegraphics{ma678-report_files/figure-latex/unnamed-chunk-1-1.pdf}
+\includegraphics{ma678-report_files/figure-latex/unnamed-chunk-1-2.pdf}
+\includegraphics{ma678-report_files/figure-latex/unnamed-chunk-1-3.pdf}
+\includegraphics{ma678-report_files/figure-latex/unnamed-chunk-1-4.pdf}
+\includegraphics{ma678-report_files/figure-latex/unnamed-chunk-1-5.pdf}
+\includegraphics{ma678-report_files/figure-latex/unnamed-chunk-1-6.pdf}
+
+\hypertarget{data-acquisation}{%
+\section{Data Acquisation}\label{data-acquisation}}
+
+The basic dataset I start with is the spotify\_track\_data from the
+billboard r package, which contains the Billboard hot 100 songs from
+1960 to 2015, as well as their musical traits such as tempo and key.\\
+In order to capture sentiment from the lyrics I downloaded lyrics data
+using the genius package and compared the lyrics to the AFINN lexicon.
+The AFINN lexicon assigns a score that runs between -5 and 5 to words in
+the lyrics, where negative scores indicates negative sentiment and
+positive scores indicating positive sentiment. The overall lyrical
+sentiment of a track is recorded by adding scores of all the words in
+its lyrics. The code for creating this overall sentiment for all the
+tracks is displayed below.
+
+\hypertarget{the-idea-lyrical-sentiment-and-musical-traits-of-tracks}{%
+\section{The Idea: Lyrical Sentiment and Musical Traits of
+Tracks}\label{the-idea-lyrical-sentiment-and-musical-traits-of-tracks}}
+
+There is connection between lyrics and musical traits of a track.
+Oftentimes one would assume that musical deliveries and lyrical
+sentiments would align with each other. However, one cannot rule out the
+fact that sometimes artists would exploit this assumption and choose to
+contrast these two aspects of modern pop music in oder to achieve
+artistic effect such as juxtaposition or sarcasm. I plan to run
+regression model on the relationship of the aformentioned two and would
+like to see how well the fit can be.
+
+With the dataset I have, I would also take into consideration the effect
+of the different prevailing music type in different decades.
+
+\begin{table}[ht]
+  \centering
+  \caption{ }
+  \begin{tabular}{ll}
+    \hline
+    Decade & Major Genre\\
+    \hline
+    60s & R&B, Folk Rock \\
+    70s & Disco/Dance, Punk \\
+    80s & Dance-Pop, Hip Hop\\
+    90s & Pop, Rap, Alternative Rock, Techno\\
+    00s & Hip Hop, Emo, Pop/Teen Pop\\
+    10s & Hip Hop, Pop, Rock\\
+    \hline
+  \end{tabular}
+\end{table}
+
+\hypertarget{eda}{%
+\section{EDA}\label{eda}}
+
+Below shows the density of lyrical sentiment of billboard songs for
+different decades. As time goes by, the distribution of lyrical
+sentiment is less concentrated and more spreadout. But still, they reach
+highest density at somewhere between 10 to 20.
+
+\begin{verbatim}
+## PhantomJS not found. You can install it with webshot::install_phantomjs(). If it is installed, please make sure the phantomjs executable can be found via the PATH variable.
+\end{verbatim}
+
+\hypertarget{htmlwidget-59b60632ce607ddbd8c2}{}
+
+In order to select predictors for the model, I first run stepwise
+selection on linear regression. I put in all the variables which I
+believe would connect to sentiment on the musical side for the initial
+model. This function selects variables according to AIC and returns a
+model with speechiness, instrumentalness, and valence.
+
+\begin{verbatim}
+## Start:  AIC=33094.7
+## sentiment ~ danceability + energy + loudness + mode + speechiness + 
+##     acousticness + instrumentalness + valence + tempo
+## 
+##                    Df Sum of Sq     RSS   AIC
+## - acousticness      1         5 7370587 33093
+## - tempo             1        57 7370639 33093
+## - energy            1       455 7371037 33093
+## - danceability      1       725 7371307 33093
+## - loudness          1      1285 7371867 33093
+## - mode              1      1797 7372380 33094
+## <none>                          7370582 33095
+## - instrumentalness  1      7459 7378041 33097
+## - valence           1     49880 7420462 33123
+## - speechiness       1    131889 7502472 33172
+## 
+## Step:  AIC=33092.7
+## sentiment ~ danceability + energy + loudness + mode + speechiness + 
+##     instrumentalness + valence + tempo
+## 
+##                    Df Sum of Sq     RSS   AIC
+## - tempo             1        59 7370646 33091
+## - energy            1       621 7371209 33091
+## - danceability      1       817 7371405 33091
+## - loudness          1      1297 7371884 33091
+## - mode              1      1793 7372380 33092
+## <none>                          7370587 33093
+## + acousticness      1         5 7370582 33095
+## - instrumentalness  1      7457 7378044 33095
+## - valence           1     51612 7422199 33122
+## - speechiness       1    132037 7502625 33170
+## 
+## Step:  AIC=33090.74
+## sentiment ~ danceability + energy + loudness + mode + speechiness + 
+##     instrumentalness + valence
+## 
+##                    Df Sum of Sq     RSS   AIC
+## - energy            1       661 7371307 33089
+## - danceability      1       758 7371405 33089
+## - loudness          1      1298 7371945 33090
+## - mode              1      1782 7372429 33090
+## <none>                          7370646 33091
+## + tempo             1        59 7370587 33093
+## + acousticness      1         7 7370639 33093
+## - instrumentalness  1      7446 7378093 33093
+## - valence           1     51981 7422627 33120
+## - speechiness       1    133332 7503978 33169
+## 
+## Step:  AIC=33089.14
+## sentiment ~ danceability + loudness + mode + speechiness + instrumentalness + 
+##     valence
+## 
+##                    Df Sum of Sq     RSS   AIC
+## - loudness          1       638 7371945 33088
+## - danceability      1       650 7371957 33088
+## - mode              1      1703 7373010 33088
+## <none>                          7371307 33089
+## + energy            1       661 7370646 33091
+## + acousticness      1       195 7371112 33091
+## + tempo             1        98 7371209 33091
+## - instrumentalness  1      7930 7379237 33092
+## - valence           1     58566 7429873 33122
+## - speechiness       1    135510 7506817 33168
+## 
+## Step:  AIC=33087.52
+## sentiment ~ danceability + mode + speechiness + instrumentalness + 
+##     valence
+## 
+##                    Df Sum of Sq     RSS   AIC
+## - danceability      1       574 7372519 33086
+## - mode              1      1833 7373778 33087
+## <none>                          7371945 33088
+## + loudness          1       638 7371307 33089
+## + tempo             1        58 7371886 33089
+## + acousticness      1        12 7371933 33090
+## + energy            1         0 7371945 33090
+## - instrumentalness  1      8600 7380545 33091
+## - valence           1     58546 7430491 33121
+## - speechiness       1    135604 7507549 33167
+## 
+## Step:  AIC=33085.87
+## sentiment ~ mode + speechiness + instrumentalness + valence
+## 
+##                    Df Sum of Sq     RSS   AIC
+## - mode              1      1582 7374100 33085
+## <none>                          7372519 33086
+## + danceability      1       574 7371945 33088
+## + loudness          1       561 7371957 33088
+## + acousticness      1        72 7372446 33088
+## + tempo             1         1 7372517 33088
+## + energy            1         1 7372518 33088
+## - instrumentalness  1      8556 7381075 33089
+## - valence           1     68635 7441153 33125
+## - speechiness       1    143363 7515881 33170
+## 
+## Step:  AIC=33084.83
+## sentiment ~ speechiness + instrumentalness + valence
+## 
+##                    Df Sum of Sq     RSS   AIC
+## <none>                          7374100 33085
+## + mode              1      1582 7372519 33086
+## + loudness          1       694 7373407 33086
+## + danceability      1       323 7373778 33087
+## + energy            1        12 7374088 33087
+## + acousticness      1        12 7374089 33087
+## + tempo             1         3 7374097 33087
+## - instrumentalness  1      8539 7382639 33088
+## - valence           1     70797 7444897 33125
+## - speechiness       1    141781 7515881 33168
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = sentiment ~ speechiness + instrumentalness + valence, 
+##     data = track_data1)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -508.06  -18.40   -4.45   14.74  549.18 
+## 
+## Coefficients:
+##                  Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)        11.427      1.723   6.631 3.73e-11 ***
+## speechiness       -81.571      8.809  -9.260  < 2e-16 ***
+## instrumentalness  -12.309      5.417  -2.273   0.0231 *  
+## valence            16.689      2.550   6.544 6.68e-11 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 40.66 on 4460 degrees of freedom
+## Multiple R-squared:  0.02645,    Adjusted R-squared:  0.02579 
+## F-statistic: 40.39 on 3 and 4460 DF,  p-value: < 2.2e-16
+\end{verbatim}
+
+\includegraphics{ma678-report_files/figure-latex/unnamed-chunk-5-1.pdf}
+
+Speechiness captures the presence of spoken words in a track. The more
+exclusively speech-like the recording, the closer to 1.0 the attribute
+value. Values above 0.66 describe tracks that are probably made entirely
+of spoken words. Values between 0.33 and 0.66 describe tracks that may
+contain both music and speech, including cases such as rap. Values below
+0.33 most likely represent music and other non-speech-like tracks.
+
+From the density plot below, one can detect the change of speechiness
+density. Moving from the 60s to 10s, the density exhibits larger
+variance and the speechiness value with maximum density gradually moves
+right. It might be explained by the prevalence of Hip-Hop/Rap music
+starting from the 90s.
+
+\hypertarget{htmlwidget-5c3ea36c794aed241581}{}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{cccccc}
+\toprule
+Decade & 0\% & 25\% & 50\% & 75\% & 100\%\\
+\midrule
+60s & 0.0224 & 0.03080 & 0.0360 & 0.048300 & 0.540\\
+70s & 0.0228 & 0.03130 & 0.0377 & 0.052475 & 0.613\\
+80s & 0.0215 & 0.03025 & 0.0362 & 0.047000 & 0.255\\
+90s & 0.0228 & 0.03090 & 0.0391 & 0.064000 & 0.464\\
+00s & 0.0236 & 0.03605 & 0.0594 & 0.147500 & 0.576\\
+\addlinespace
+10s & 0.0244 & 0.03850 & 0.0520 & 0.091600 & 0.516\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The value of instrumentalness represents the amount of vocals in the
+song. The closer it is to 1.0, the more instrumental the song is. As
+shown in the table, the mean and median of the instrumentalness score
+through the decades becomes smaller, with their range also shrinking.
+The tracks come to be more vocal, perhaps as hip-hop muisc merge to
+mainstream and influence other genres.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ccccc}
+\toprule
+Decade & Min & Median & Mean & Max\\
+\midrule
+60s & 0 & 5.30e-06 & 0.0510 & 0.984\\
+70s & 0 & 8.50e-05 & 0.0345 & 0.944\\
+80s & 0 & 3.28e-05 & 0.0198 & 0.898\\
+90s & 0 & 6.30e-06 & 0.0225 & 0.974\\
+00s & 0 & 0.00e+00 & 0.0064 & 0.738\\
+\addlinespace
+10s & 0 & 0.00e+00 & 0.0034 & 0.680\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Valence is a Spotify measure from 0.0 to 1.0 describing the musical
+positiveness conveyed by a track. Tracks with high valence should sound
+more happy, cheerful, or euphoric, while tracks with low valence should
+sound more negative (sad, depressed, angry). But is it a good
+measurement?
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ccccc}
+\toprule
+year & track\_name & artist\_name & valence & sentiment\\
+\midrule
+1968 & Simon Says & 1910 Fruitgum Company & 0.985 & 22\\
+1983 & She Works Hard For The Money & Donna Summer & 0.985 & -8\\
+1979 & What A Fool Believes & The Doobie Brothers & 0.984 & -6\\
+1973 & Rockin' Pneumonia \& The Boogie Woogie Flu & Huey "Piano" Smith & 0.982 & -14\\
+1979 & September & Earth, Wind \& Fire & 0.981 & 25\\
+\addlinespace
+1987 & C'est La Vie & Robbie Nevil & 0.979 & 4\\
+1970 & Hitchin' a Ride & Vanity Fare & 0.978 & 0\\
+1977 & Dancin' Man & Q & 0.978 & 9\\
+1961 & Let's Twist Again & Chubby Checker & 0.977 & 29\\
+1971 & Put Your Hand in the Hand & Ocean & 0.977 & 5\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+I listened to the song with the highest valience, which is Simon Says by
+1910 Fruitgum Company, which turned out to be not so much of a positive
+track. It is upbeat but I would definitely not describe it as
+exceedingly cheerful. Taking a look at its lyrics:\\
+I'd like to play a game, That is so much fun, And it's not so very hard
+to do, The name of the game is Simple Simon says, And I would like for
+you to play it to,
+
+Put your hands in the air, Simple Simon says, Shake them all about,
+Simple Simon says, Do it when Simon says, Simple Simon says, And you
+will never be out. \ldots{}
+
+It also does not convey exceptionally cheerful message.
+
+\hypertarget{model}{%
+\section{Model}\label{model}}
+
+Taking into account the basic sentimental change through the decades, I
+fit a Bayesian linear model with ramdom intercept(with group variable
+decade).
+
+\begin{verbatim}
+## 
+## SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
+## Chain 1: 
+## Chain 1: Gradient evaluation took 0.000479 seconds
+## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 4.79 seconds.
+## Chain 1: Adjust your expectations accordingly!
+## Chain 1: 
+## Chain 1: 
+## Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 1: 
+## Chain 1:  Elapsed Time: 14.8354 seconds (Warm-up)
+## Chain 1:                6.79055 seconds (Sampling)
+## Chain 1:                21.6259 seconds (Total)
+## Chain 1: 
+## 
+## SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
+## Chain 2: 
+## Chain 2: Gradient evaluation took 0.000323 seconds
+## Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 3.23 seconds.
+## Chain 2: Adjust your expectations accordingly!
+## Chain 2: 
+## Chain 2: 
+## Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 2: 
+## Chain 2:  Elapsed Time: 15.8718 seconds (Warm-up)
+## Chain 2:                5.06757 seconds (Sampling)
+## Chain 2:                20.9394 seconds (Total)
+## Chain 2: 
+## 
+## SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
+## Chain 3: 
+## Chain 3: Gradient evaluation took 0.000663 seconds
+## Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 6.63 seconds.
+## Chain 3: Adjust your expectations accordingly!
+## Chain 3: 
+## Chain 3: 
+## Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 3: 
+## Chain 3:  Elapsed Time: 14.8894 seconds (Warm-up)
+## Chain 3:                7.03665 seconds (Sampling)
+## Chain 3:                21.9261 seconds (Total)
+## Chain 3: 
+## 
+## SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
+## Chain 4: 
+## Chain 4: Gradient evaluation took 0.000242 seconds
+## Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 2.42 seconds.
+## Chain 4: Adjust your expectations accordingly!
+## Chain 4: 
+## Chain 4: 
+## Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)
+## Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)
+## Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)
+## Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)
+## Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)
+## Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)
+## Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
+## Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)
+## Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)
+## Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)
+## Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
+## Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
+## Chain 4: 
+## Chain 4:  Elapsed Time: 12.8051 seconds (Warm-up)
+## Chain 4:                6.7531 seconds (Sampling)
+## Chain 4:                19.5582 seconds (Total)
+## Chain 4:
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See
+## http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: Examine the pairs() plot to diagnose sampling problems
+\end{verbatim}
+
+\begin{verbatim}
+##                                                5%         95%
+## (Intercept)                             6.8577092  14.5145511
+## speechiness                           -98.6164928 -68.5271264
+## instrumentalness                      -20.6560692  -2.7194085
+## valence                                13.1557729  21.7029594
+## b[(Intercept) decade:00s]              -2.4311830   4.0104334
+## b[(Intercept) decade:10s]              -5.2422635   1.5371485
+## b[(Intercept) decade:60s]              -6.2812031   0.2972343
+## b[(Intercept) decade:70s]              -1.5739915   4.6966373
+## b[(Intercept) decade:80s]              -3.7710182   2.6130934
+## b[(Intercept) decade:90s]               0.2220577   6.9701673
+## sigma                                  39.9197271  41.3044940
+## Sigma[decade:(Intercept),(Intercept)]   1.5816601  50.7260733
+\end{verbatim}
+
+\includegraphics{ma678-report_files/figure-latex/unnamed-chunk-10-1.pdf}
+
+The fixed effect from speechiness is -83.3463, which indicates that the
+more speech-like the track is, the lyrics is expected to be more
+negative. It aligns with the expectation that hip-hop/rap music tend to
+be emotionally negative.
+
+The fixed effect from instrumentalness is -11.8029, a negative number
+indicating that the more instrumental the track is, the lyrics is
+expected to be more negative. It expains the hip-hop/rap music tend to
+be emotionally negative.
+
+Taking a look at the regression coefficient for valence, which is
+17.4895, it is a positive number implying positive association between
+instrumental emotion and lyrical sentiment. Considering that valence is
+a measurement calculated by Spotify, it seems that it captures general
+positiveness of tracks but it is not advisable to look at it on its own
+when determing the sentiment of a track.
+
+The random intercept reflects different base sentiment across the
+decades.
+
+\begin{verbatim}
+## This is bayesplot version 1.7.0
+\end{verbatim}
+
+\begin{verbatim}
+## - Online documentation and vignettes at mc-stan.org/bayesplot
+\end{verbatim}
+
+\begin{verbatim}
+## - bayesplot theme set to bayesplot::theme_default()
+\end{verbatim}
+
+\begin{verbatim}
+##    * Does _not_ affect other ggplot2 plots
+\end{verbatim}
+
+\begin{verbatim}
+##    * See ?bayesplot_theme_set for details on theme setting
+\end{verbatim}
+
+\begin{verbatim}
+## This is loo version 2.1.0.
+## **NOTE: As of version 2.0.0 loo defaults to 1 core but we recommend using as many as possible. Use the 'cores' argument or set options(mc.cores = NUM_CORES) for an entire session. Visit mc-stan.org/loo/news for details on other changes.
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: Found 2 observation(s) with a pareto_k > 0.7. We recommend calling 'loo' again with argument 'k_threshold = 0.7' in order to calculate the ELPD without the assumption that these observations are negligible. This will refit the model 2 times to compute the ELPDs for the problematic observations directly.
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Computed from 4000 by 4464 log-likelihood matrix
+## 
+##          Estimate    SE
+## elpd_loo -22879.2 164.4
+## p_loo        21.2   5.4
+## looic     45758.4 328.7
+## ------
+## Monte Carlo SE of elpd_loo is NA.
+## 
+## Pareto k diagnostic values:
+##                          Count Pct.    Min. n_eff
+## (-Inf, 0.5]   (good)     4462  100.0%  1230      
+##  (0.5, 0.7]   (ok)          0    0.0%  <NA>      
+##    (0.7, 1]   (bad)         2    0.0%  63        
+##    (1, Inf)   (very bad)    0    0.0%  <NA>      
+## See help('pareto-k-diagnostic') for details.
+\end{verbatim}
+
+\includegraphics{ma678-report_files/figure-latex/unnamed-chunk-11-1.pdf}
+One does not observe large the Pareto k diagnostic values, which would
+indicate model misspecification.
+
+\hypertarget{discussion-and-conclusion}{%
+\section{Discussion and Conclusion}\label{discussion-and-conclusion}}
+
+\includegraphics{ma678-report_files/figure-latex/unnamed-chunk-12-1.pdf}
+
+Looking at the posterior predictive check plot, one can conclude that
+this is really not a model for prediction.
+
+In a nutshell, the association between lyrics sentiment score and music
+traits is confirmed through the model. However, explaining lyrics
+sentiment with just musical traits, or at least with the musical traits
+accessible in the spotify dataset, is limited.
+
+When generate mood playlist, it is a good start point to check the mood
+on both the musical and lyrical side.
+
+
+\end{document}

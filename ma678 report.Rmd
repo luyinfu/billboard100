@@ -1,0 +1,293 @@
+---
+title: "ma678 mid-term project"
+author: "Luyin Fu"
+date: "12/5/2019"
+output: pdf_document
+always_allow_html: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(billboard)
+library(geniusr)
+library(genius)
+
+library(dplyr)
+library(tidyr)
+library(magrittr)
+library(ggplot2)
+library(plotly)
+library(purrr)
+library(broom)
+
+library(tidytext)
+library(wordcloud)
+library(RColorBrewer)
+
+library("knitr")
+library("kableExtra")
+
+library("rstanarm")
+
+theme_set(theme_minimal())
+track_data=read.csv("track_data.csv")
+sentiment=track_data$sentiment
+```
+
+
+
+```{r}
+set.seed(8522)
+data("lyrics")
+billboard_words= lyrics %>% unnest_tokens(word, lyrics) %>%
+  anti_join(stop_words) %>% mutate(word=tolower(word)) %>%
+  filter(word %in% c("hook", "chorus", "1", "2", "3", "na", "verse", "intro", "instrumental"))
+pal <- brewer.pal(8,"Dark2")
+billboard_words$year=as.numeric(billboard_words$year)
+Y=c(1960, 1970, 1980, 1990, 2000, 2010, 2015)
+D=c("60s","70s","80s","90s","00s","10s")
+for (i in 1:6){
+  billboard_words %>%
+    filter(year>=Y[i] & year<Y[i+1]) %>%
+    count(word, sort = TRUE) %>%
+    with(wordcloud(word, n, max.words = 100, random.order=FALSE, rot.per = 0.35, colors = pal))
+  i=i+1
+}
+
+```
+
+
+
+# Data Acquisation
+
+The basic dataset I start with is the spotify_track_data from the billboard r package, which contains the Billboard hot 100 songs from 1960 to 2015, as well as their musical traits such as tempo and key.   
+In order to capture sentiment from the lyrics I downloaded lyrics data using the genius package and compared the lyrics to the AFINN lexicon. The AFINN lexicon assigns a score that runs between -5 and 5 to words in the lyrics, where negative scores indicates negative sentiment and positive scores indicating positive sentiment. The overall lyrical sentiment of a track is recorded by adding scores of all the words in its lyrics. The code for creating this overall sentiment for all the tracks is displayed below.
+
+```{r}
+# data(spotify_track_data)
+# 
+# sentiment=rep(NA, 5497)
+# for (i in 1:5497){
+#   track <- tribble(
+#   ~artist, ~track,
+#   spotify_track_data$artist_name[i], spotify_track_data$track_name[i])
+#   
+#   lyrics=track %>%
+#     add_genius(artist, track, type = "lyrics")
+#   
+#   if (length(lyrics$track)!=0){
+#     lyrics1=lyrics %>% unnest_tokens(word, lyric) %>% inner_join(get_sentiments("afinn")) 
+#     sentiment[i]=sum(lyrics1$value)
+#   }
+# 
+# }
+# track_data=cbind(spotify_track_data, sentiment)
+# write.csv(track_data,"track_data.csv",row.names = FALSE) 
+```
+
+# The Idea: Lyrical Sentiment and Musical Traits of Tracks
+
+There is connection between lyrics and musical traits of a track. Oftentimes one would assume that musical deliveries and lyrical sentiments would align with each other. However, one cannot rule out the fact that sometimes artists would exploit this assumption and choose to contrast these two aspects of modern pop music in oder to achieve artistic effect such as juxtaposition or sarcasm. I plan to run regression model on the relationship of the aformentioned two and would like to see how well the fit can be.
+
+With the dataset I have, I would also take into consideration the effect of the different prevailing music type in different decades.
+
+\begin{table}[ht]
+  \centering
+  \caption{ }
+  \begin{tabular}{ll}
+    \hline
+    Decade & Major Genre\\
+    \hline
+    60s & R&B, Folk Rock \\
+    70s & Disco/Dance, Punk \\
+    80s & Dance-Pop, Hip Hop\\
+    90s & Pop, Rap, Alternative Rock, Techno\\
+    00s & Hip Hop, Emo, Pop/Teen Pop\\
+    10s & Hip Hop, Pop, Rock\\
+    \hline
+  \end{tabular}
+\end{table}
+
+# EDA
+
+```{r}
+# build dataset
+
+qt=quantile(sentiment, probs = seq(0,1, by = 0.1) ,na.rm = T)
+qt1=quantile(sentiment,probs = c(0, 0.15, 0.85, 1), na.rm = T)
+# drop out the upper and lower 15% of the sentiment score
+track_data1 =track_data %>%
+  group_by(year) %>% mutate(rank=row_number(year)) %>% drop_na(sentiment) %>%
+  filter(sentiment>=qt1[2] | sentiment<=qt1[3]) %>% ungroup()
+
+# create variable decade
+track_data1$year1=as.numeric(track_data1$year)
+track_data1 %<>% mutate(decade=ifelse(year1<1970, "60s",
+                                             ifelse(year1<1980, "70s",
+                                                    ifelse(year1<1990, "80s",
+                                                           ifelse(year1<2000, "90s",
+                                                                  ifelse(year1<2010, "00s",
+                                                                         ifelse(year1<2016, "10s", NA)))))))
+
+```
+
+Below shows the density of lyrical sentiment of billboard songs for different decades. As time goes by, the distribution of lyrical sentiment is less concentrated and more spreadout. But still, they reach highest density at somewhere between 10 to 20.
+
+```{r}
+p_sentiment=track_data1 %>% mutate(decade_level=factor(decade, levels =c("60s","70s","80s","90s","00s","10s"))) %>%
+  ggplot(aes(sentiment, color=decade_level))+geom_density()+
+  labs(color = "Decade")+
+  scale_colour_brewer(palette = "Set1")
+ggplotly(p_sentiment)
+
+# track_data1 %>% mutate(Decade=factor(decade, levels =c("60s","70s","80s","90s","00s","10s"))) %>% group_by(Decade) %>%
+#   summarise("mean"=mean(sentiment)) %>%
+#   kable(align = "c", booktabs = T) %>%
+#   kable_styling(position = "center")
+
+```
+
+
+
+
+In order to select predictors for the model, I first run stepwise selection on linear regression. I put in all the variables which I believe would connect to  sentiment on the musical side for the initial model. This function selects variables according to AIC and returns a model with speechiness, instrumentalness, and valence. 
+
+```{r}
+# stepwise selection
+fit1=lm(formula = sentiment~ danceability+energy+loudness+mode+speechiness+acousticness+instrumentalness+valence+tempo, data=track_data1)
+
+step1=step(fit1,  direction = c("both", "backward", "forward"))
+summary(step1)
+plot(fitted(step1),resid(step1))
+```
+
+Speechiness captures the presence of spoken words in a track. The more exclusively speech-like the recording, the closer to 1.0 the attribute value. Values above 0.66 describe tracks that are probably made entirely of spoken words. Values between 0.33 and 0.66 describe tracks that may contain both music and speech, including cases such as rap. Values below 0.33 most likely represent music and other non-speech-like tracks.
+
+
+From the density plot below, one can detect the change of speechiness density. Moving from the 60s to 10s, the density exhibits larger variance and the speechiness value with maximum density gradually moves right. It might be explained by the prevalence of Hip-Hop/Rap music starting from the 90s.
+
+```{r}
+#density plot for speechiness
+
+p_speechiness=track_data1 %>% mutate(decade_level=factor(decade, levels =c("60s","70s","80s","90s","00s","10s"))) %>%
+  ggplot(aes(speechiness, color=decade_level))+geom_density()+
+  labs(color = "Decade")+
+  scale_colour_brewer(palette = "Set1")
+ggplotly(p_speechiness)
+```
+
+
+
+```{r}
+track_data1 %>% mutate(Decade=factor(decade, levels =c("60s","70s","80s","90s","00s","10s"))) %>% group_by(Decade) %>% 
+  summarise("0%"=min(speechiness),"25%"=quantile(speechiness, probs = 0.25),
+            "50%"=quantile(speechiness, probs = 0.5),
+            "75%"=quantile(speechiness, probs = 0.75),
+            "100%"=max(speechiness)) %>%
+  kable(align = "c", booktabs = T, format = "latex") %>%
+  kable_styling(position = "center")
+```
+
+
+The value of instrumentalness represents the amount of vocals in the song. The closer it is to 1.0, the more instrumental the song is. As shown in the table, the mean and median of the instrumentalness score through the decades becomes smaller, with their range also shrinking. The tracks come to be more vocal, perhaps as hip-hop muisc merge to mainstream and influence other genres. 
+
+```{r}
+track_data1 %>% 
+  mutate(Decade=factor(decade, levels =c("60s","70s","80s","90s","00s","10s"))) %>% group_by(Decade) %>% 
+  summarise("Min"=min(instrumentalness),
+            "Median"=median(instrumentalness),
+            "Mean"=round(mean(instrumentalness),4),
+            "Max"=max(instrumentalness)) %>%
+  kable(align = "c", booktabs = T, format = "latex") %>%
+  kable_styling(position = "center")
+```
+
+
+Valence is a Spotify measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence should sound more happy, cheerful, or euphoric, while tracks with low valence should sound more negative (sad, depressed, angry). But is it a good measurement?
+
+```{r}
+# table for valence
+
+track_data1 %>% arrange(desc(valence)) %>% select(year, track_name, artist_name, valence, sentiment) %>% slice(1:10) %>%
+  kable(align = "c", booktabs = T, format = "latex") %>%
+  kable_styling(position = "center")
+
+# track_data1 %>% filter(decade=="10s") %>% arrange(desc(valence)) %>% select(year, track_name, artist_name, valence, sentiment) %>% slice(1:10) %>%
+#   kable(align = "c", booktabs = T) %>%
+#   kable_styling(position = "center")
+```
+ I listened to the song with the highest valience, which is Simon Says by 1910 Fruitgum Company, which turned out to be not so much of a positive track. It is upbeat but I would definitely not describe it as exceedingly cheerful. Taking a look at its lyrics:  
+I'd like to play a game,
+That is so much fun,
+And it's not so very hard to do,
+The name of the game is Simple Simon says,
+And I would like for you to play it to,
+
+Put your hands in the air,
+Simple Simon says,
+Shake them all about,
+Simple Simon says,
+Do it when Simon says,
+Simple Simon says,
+And you will never be out.
+...
+
+It also does not convey exceptionally cheerful message.
+
+
+
+
+# Model
+
+Taking into account the basic sentimental change through the decades, I fit a Bayesian linear model with ramdom intercept(with group variable decade).
+
+```{r}
+fit2=stan_lmer(formula = sentiment~ speechiness + instrumentalness  + 
+            valence+(1|decade),data=track_data1)
+# fit3=lmer(formula = sentiment~ speechiness + instrumentalness + liveness + 
+#             valence+(1|decade),data=track_data1)
+#summary(fit2)
+posterior_interval(fit2)
+#confint(fit2)
+
+residual=track_data1$sentiment-fitted(fit2)
+plot(residual)
+```
+
+The fixed effect from speechiness is `r round(coef(fit2)$decade[1,2],4)`, which indicates that the more speech-like the track is, the lyrics is expected to be more negative. It aligns with the expectation that hip-hop/rap music tend to be emotionally negative.
+
+The fixed effect from instrumentalness is `r round(coef(fit2)$decade[1,3],4)`, a negative number indicating that the more instrumental the track is, the lyrics is expected to be more negative. It expains the hip-hop/rap music tend to be emotionally negative.
+
+Taking a look at the regression coefficient for valence, which is `r round(coef(fit2)$decade[1,4],4)`, it is a positive number implying positive association between instrumental emotion and lyrical sentiment. Considering that valence is a measurement calculated by Spotify, it seems that it captures general positiveness of tracks but it is not advisable to look at it on its own when determing the sentiment of a track.
+
+The random intercept reflects different base sentiment across the decades.
+
+
+
+```{r}
+library("bayesplot")
+library("loo")
+loo1 <- loo(fit2, save_psis = TRUE)
+print(loo1)
+plot(loo1)
+```
+One does not observe large the Pareto k diagnostic values, which would indicate  model misspecification.
+
+
+
+# Discussion and Conclusion
+
+```{r}
+pp_check(fit2)
+```
+
+Looking at the posterior predictive check plot, one can conclude that this is really not a model for prediction.
+
+In a nutshell, the association between lyrics sentiment score and music traits is confirmed through the model. However, explaining lyrics sentiment with just musical traits, or at least with the musical traits accessible in the spotify dataset, is limited.
+
+When generate mood playlist, it is a good start point to check the mood on both the musical and lyrical side. 
+
+
+
+
