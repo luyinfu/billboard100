@@ -42,8 +42,7 @@ sentiment=track_data$sentiment
 With the lyrics dataset from the billborad r package, I make wordcoulds for each decade of the most frequently used words in the top 100 songs on billboard chart. We can somehow get taste of the change of sentiment through the decades with more curse words appearing in word cloud for more recent tracks.
 The order of the wordcloud is from the 60s to the 10s.
 
-```{r, warning=F}
-set.seed(8522)
+```{r, warning=FALSE, message=FALSE}
 data("lyrics")
 billboard_words= lyrics %>% unnest_tokens(word, lyrics) %>%
   anti_join(stop_words) %>% mutate(word=tolower(word)) %>%
@@ -75,29 +74,9 @@ for (i in 1:6){
 # Data Acquisation
 
 The basic dataset I start with is the spotify_track_data from the billboard r package, which contains the Billboard hot 100 songs from 1960 to 2015, as well as their musical traits such as tempo and key.   
-In order to capture sentiment from the lyrics I downloaded lyrics data using the genius package and compared the lyrics to the AFINN lexicon. The AFINN lexicon assigns a score that runs between -5 and 5 to words in the lyrics, where negative scores indicates negative sentiment and positive scores indicating positive sentiment. The overall lyrical sentiment of a track is recorded by adding scores of all the words in its lyrics. The code for creating this overall sentiment for all the tracks is displayed below.
+In order to capture sentiment from the lyrics I downloaded lyrics data using the genius package and compared the lyrics to the AFINN lexicon. The AFINN lexicon assigns a score that runs between -5 and 5 to words in the lyrics, where negative scores indicates negative sentiment and positive scores indicating positive sentiment. The overall lyrical sentiment of a track is recorded by adding scores of all the words in its lyrics. The code for creating this overall sentiment for all the tracks is displayed in the appendix.
 
-```{r}
-# data(spotify_track_data)
-# 
-# sentiment=rep(NA, 5497)
-# for (i in 1:5497){
-#   track <- tribble(
-#   ~artist, ~track,
-#   spotify_track_data$artist_name[i], spotify_track_data$track_name[i])
-#   
-#   lyrics=track %>%
-#     add_genius(artist, track, type = "lyrics")
-#   
-#   if (length(lyrics$track)!=0){
-#     lyrics1=lyrics %>% unnest_tokens(word, lyric) %>% inner_join(get_sentiments("afinn")) 
-#     sentiment[i]=sum(lyrics1$value)
-#   }
-# 
-# }
-# track_data=cbind(spotify_track_data, sentiment)
-# write.csv(track_data,"track_data.csv",row.names = FALSE) 
-```
+
 
 # The Idea: Lyrical Sentiment and Musical Traits of Tracks
 
@@ -105,22 +84,16 @@ There is connection between lyrics and musical traits of a track. Oftentimes one
 
 With the dataset I have, I would also take into consideration the effect of the different prevailing music type in different decades.
 
-\begin{table}[ht]
-  \centering
-  \caption{ }
-  \begin{tabular}{ll}
-    \hline
-    Decade & Major Genre\\
-    \hline
-    60s & R&B, Folk Rock \\
-    70s & Disco/Dance, Punk \\
-    80s & Dance-Pop, Hip Hop\\
-    90s & Pop, Rap, Alternative Rock, Techno\\
-    00s & Hip Hop, Emo, Pop/Teen Pop\\
-    10s & Hip Hop, Pop, Rock\\
-    \hline
-  \end{tabular}
-\end{table}
+```{r}
+Decade=c("60s","70s","80s","90s","00s","10s")
+`Dominant Style`=c("R&B, Folk Rock", "Disco/Dance, Punk", "Dance-Pop, Hip Hop", 
+        "Pop, Rap, Alternative Rock, Techno", "Hip Hop, Emo, Pop/Teen Pop",
+        "Hip Hop, Pop, Rock")
+kable(cbind(Decade, `Dominant Style`), align = "c", booktabs = T, caption = "") %>%
+  kable_styling(position = "center")
+```
+
+
 
 # EDA
 
@@ -166,11 +139,14 @@ ggplotly(p_sentiment)
 
 In order to select predictors for the model, I first run stepwise selection on linear regression. I put in all the variables which I believe would connect to  sentiment on the musical side for the initial model. This function selects variables according to AIC and returns a model with speechiness, instrumentalness, and valence. 
 
-```{r}
+```{r, results = FALSE}
 # stepwise selection
 fit1=lm(formula = sentiment~ danceability+energy+loudness+mode+speechiness+acousticness+instrumentalness+valence+tempo, data=track_data1)
 
 step1=step(fit1,  direction = c("both", "backward", "forward"))
+```
+
+```{r}
 summary(step1)
 plot(fitted(step1),resid(step1))
 ```
@@ -203,7 +179,7 @@ track_data1 %>% mutate(Decade=factor(decade, levels =c("60s","70s","80s","90s","
 ```
 
 
-The value of instrumentalness represents the amount of vocals in the song. The closer it is to 1.0, the more instrumental the song is. As shown in the table, the mean and median of the instrumentalness score through the decades becomes smaller, with their range also shrinking. The tracks come to be more vocal, perhaps as hip-hop muisc merge to mainstream and influence other genres. 
+The value of instrumentalness represents the amount of vocals in the song. The closer it is to 1.0, the more instrumental the song is. As shown in the table, the mean and median of the instrumentalness score through the decades becomes smaller, with their range also shrinking. The tracks come to be more vocal, perhaps as hip-hop muisc merges to mainstream and influences other genres. 
 
 ```{r}
 track_data1 %>% 
@@ -215,7 +191,6 @@ track_data1 %>%
   kable(align = "c", booktabs = T, caption = "Instrumentalness Summary") %>%
   kable_styling(position = "center")
 ```
-
 
 Valence is a Spotify measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence should sound more happy, cheerful, or euphoric, while tracks with low valence should sound more negative (sad, depressed, angry). But is it a good measurement?
 
@@ -256,12 +231,15 @@ Does it convey exceptionally cheerful message? Not really.
 
 Taking into account the basic sentimental change through the decades, I fit a Bayesian linear model with ramdom intercept(with group variable decade).
 
-```{r}
+```{r, results = FALSE}
 fit2=stan_lmer(formula = sentiment~ speechiness + instrumentalness  + 
             valence+(1|decade),data=track_data1)
-# fit3=lmer(formula = sentiment~ speechiness + instrumentalness + liveness + 
-#             valence+(1|decade),data=track_data1)
-#summary(fit2)
+#fit3=lmer(formula = sentiment~ speechiness + instrumentalness + liveness + 
+         # valence+(1|decade),data=track_data1)
+```
+
+```{r}
+summary(fit2)
 posterior_interval(fit2)
 #confint(fit2)
 
@@ -279,7 +257,7 @@ The random intercept reflects different base sentiment across the decades.
 
 
 
-```{r, warning=F}
+```{r, warning=FALSE, message=FALSE}
 library("bayesplot")
 library("loo")
 loo1 <- loo(fit2, save_psis = TRUE)
@@ -297,9 +275,32 @@ One does not observe large the Pareto k diagnostic values, which would indicate 
 pp_check(fit2)
 ```
 
-Looking at the posterior predictive check plot, one can conclude that this is really not a model for prediction.
+Looking at the posterior predictive check plot, one can conclude that this is really not a model for prediction. 
 
 In a nutshell, the association between lyrics sentiment score and music traits is confirmed through the model. However, explaining lyrics sentiment with just musical traits, or at least with the musical traits accessible in the spotify dataset, is limited.
 
-When generate mood playlist, it is a good start point to check the mood on both the musical and lyrical side. 
+When generate mood playlist, it is a good start point to check the consistency of the mood conveyed by both the musical and lyrical sides of the track on. 
 
+# Appendix
+
+```{r, echo=TRUE}
+# data(spotify_track_data)
+# 
+# sentiment=rep(NA, 5497)
+# for (i in 1:5497){
+#   track <- tribble(
+#   ~artist, ~track,
+#   spotify_track_data$artist_name[i], spotify_track_data$track_name[i])
+#   
+#   lyrics=track %>%
+#     add_genius(artist, track, type = "lyrics")
+#   
+#   if (length(lyrics$track)!=0){
+#     lyrics1=lyrics %>% unnest_tokens(word, lyric) %>% inner_join(get_sentiments("afinn")) 
+#     sentiment[i]=sum(lyrics1$value)
+#   }
+# 
+# }
+# track_data=cbind(spotify_track_data, sentiment)
+# write.csv(track_data,"track_data.csv",row.names = FALSE) 
+```
